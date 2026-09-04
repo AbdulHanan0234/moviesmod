@@ -1,0 +1,80 @@
+.ep-page {
+  max-width: 900px;
+  margin: 25px auto;
+  padding: 0 15px;
+  color: #e4e4e7;
+}
+
+.ep-loading,
+.ep-notfound,
+.ep-empty {
+  color: #a1a1aa;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.ep-notfound a,
+.ep-breadcrumb a {
+  color: #14b8a6;
+  text-decoration: none;
+}
+
+.ep-breadcrumb {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin-bottom: 10px;
+}
+
+.ep-breadcrumb .sep {
+  margin: 0 6px;
+  color: #52525b;
+}
+
+.ep-title {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.ep-quality {
+  color: #14b8a6;
+  font-size: 18px;
+}
+
+.ep-quality-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.ep-quality-tab {
+  padding: 6px 12px;
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  color: #e4e4e7;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.ep-quality-tab--active {
+  background: #14b8a6;
+  color: #08181a;
+  border-color: #14b8a6;
+  font-weight: 700;
+}
+
+.ep-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ep-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ep-num {
+  font-weight: 600;
+}

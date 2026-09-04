@@ -1,0 +1,47 @@
+.body {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1170px;
+  width: 100%;
+  color: white;
+  padding: 0;
+}
+.social {
+  margin-top: 25px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.social button {
+  height: 33px;
+  width: auto;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.btn-telegram {
+  background: #009de1;
+  border: 2px outset #0088cc;
+  color: white;
+}
+.btn-4k {
+  background: #ffaa2c;
+  border: 2px outset #edba26;
+  color: black;
+}
+.btn-social {
+  background-color: #555555;
+  border: 1px solid white;
+  color: white;
+  margin: 0px 4px;
+  transition: 1s;
+}
+.btn-social:hover {
+  background: white;
+  color: black;
+}

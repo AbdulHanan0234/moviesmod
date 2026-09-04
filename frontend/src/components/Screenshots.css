@@ -1,0 +1,30 @@
+.section-heading {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 28px 0 14px;
+}
+.section-heading i {
+  color: #3b82f6;
+  margin-right: 6px;
+}
+
+.screenshots {
+  /* display: grid;
+  grid-template-columns: repeat(3, 1fr); */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0;
+}
+.screenshots img {
+  width: 100%;
+  /* border-radius: 6px; */
+  /* border: 1px solid #3f3f46; */
+}
+
+/* @media (max-width: 640px) {
+  .screenshots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+} */

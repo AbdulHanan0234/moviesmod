@@ -1,0 +1,36 @@
+.relatedpost-heading {
+  color: #a1a1a1;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 28px 0 14px;
+  font-family: Roboto, sans-serif;
+}
+.relatedpost-heading i {
+  color: #3b82f6;
+  margin-right: 6px;
+}
+
+.note {
+  color: #a1a1aa;
+  font-size: 13px;
+  margin: 10px 0;
+}
+.note i {
+  color: #009de1;
+  margin-right: 4px;
+}
+
+.related-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.related-cards .movie-card {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .related-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

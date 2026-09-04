@@ -1,0 +1,98 @@
+.download-section-heading {
+  color: #ff0000;
+  font-size: 22px;
+  font-family: Roboto;
+  font-weight: 400;
+  margin: 28px 0 14px;
+  text-align: center;
+}
+
+.download-hr {
+  border: none;
+  border-top: 1px solid gray;
+  width: 300px;
+  margin: 35px auto;
+}
+
+.dl-btn {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 15px;
+  transition: opacity 0.2s ease;
+}
+.download-group {
+  margin: 18px 0;
+}
+.download-heading {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-family: "Roboto", sans-serif;
+  font-size: 21px;
+  font-weight: 500;
+  color: #555555;
+}
+.download-links {
+  text-align: center;
+  margin: 0 0 20px;
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+}
+.download-links .dl-btn {
+  display: inline-block;
+  margin: 4px 6px;
+  padding: 10px 18px;
+}
+.text-teal {
+  color: rgb(0, 128, 128);
+}
+.text-red {
+  color: rgb(255, 0, 0);
+}
+.text-blue {
+  color: rgb(51, 102, 255);
+}
+.dl-btn:hover {
+  color: #ffffff;
+  opacity: 0.9;
+}
+.dl-single {
+  background: #009987;
+}
+.dl-batch {
+  background: #f97c7c;
+}
+.alert-dl {
+  text-align: center;
+  display: block;
+  padding: 8px;
+  margin: 5px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+  font-weight: normal;
+  color: #fff;
+}
+.alert-dl-danger {
+  background-color: #f66459;
+  border-color: rgb(235, 204, 209);
+}
+.alert-dl-success {
+  background-color: #2fb986;
+  border-color: rgb(214, 233, 198);
+}
+.alert-dl-warning {
+  background-color: #ffaa2c;
+  border-color: rgb(250, 235, 204);
+}
+.alert-dl-info {
+  background-color: #47a8f5;
+  border-color: rgb(188, 232, 241);
+}

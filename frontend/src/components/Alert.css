@@ -1,0 +1,42 @@
+
+.alert {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1065px;
+    width: 100%;
+    padding: 0;
+    margin-top: 30px;
+    background: #2fb986;
+    min-height: 42px;
+    color: black;
+    font-family: roboto, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    position: relative;
+    text-align: center;
+  }
+  .alert p {
+    margin: 0;
+  }
+  .alert-a {
+    text-decoration: none;
+    color: black;
+    transition: 1s;
+  }
+  .alert-a:hover {
+    color: #d35151;
+  }
+  .alert-x {
+    border: none;
+    background: none;
+    color: white;
+    position: absolute;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.5s;
+  }
+  .alert-x:hover {
+    color: black;
+  }
+  

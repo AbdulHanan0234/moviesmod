@@ -1,0 +1,21 @@
+.footer {
+  height: 75px;
+  width: 100%;
+  background: #27272a;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.copyrights a {
+  font-family: roboto;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+  color: #99a1a3;
+  transition: 1s;
+}
+
+.copyrights a:hover {
+  color: #2fb986;
+}

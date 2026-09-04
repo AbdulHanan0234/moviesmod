@@ -1,0 +1,45 @@
+.series-info-container {
+  margin: 20px 0;
+  color: #e4e4e7;
+  font-family: "Roboto", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.series-info-container h3,
+.series-info-container h2 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.series-info-container h3 {
+  font-size: 18px;
+}
+
+.series-info-container h2 {
+  font-size: 20px;
+}
+
+.series-info-container ul {
+  list-style-type: disc;
+  padding-left: 25px;
+  margin-bottom: 20px;
+}
+
+.series-info-container li {
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.series-info-container li strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.series-info-container p {
+  color: #d4d4d8;
+  line-height: 1.6;
+  font-size: 14px;
+  margin-bottom: 15px;
+}

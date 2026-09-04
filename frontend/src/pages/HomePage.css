@@ -1,0 +1,11 @@
+.search-results-note {
+  margin: 20px auto 0;
+  max-width: 1170px;
+  width: 100%;
+  padding: 0 30px;
+  color: #a1a1aa;
+  font-size: 14px;
+}
+.search-results-note strong {
+  color: #3b82f6;
+}

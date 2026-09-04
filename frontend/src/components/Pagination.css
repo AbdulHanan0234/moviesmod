@@ -1,0 +1,59 @@
+/* Pagination container: webpage design bar */
+.pagination-nav {
+  margin: 30px auto;
+  max-width: 1170px;
+  width: 100%;
+  color: #ffffff;
+  padding: 20px;
+  background-color: #27272a;
+}
+
+/* Button row: flex container, spacing added via gap */
+.pagination-nav .pagination {
+  gap: 6px; /* space between each button */
+}
+
+/* Default button/link/page-item style */
+.pagination-nav .page-link {
+  background-color: #494949; /* default background */
+  border-color: #494949;
+  color: #ffffff; /* numbers and text color */
+  font-family: Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  display: block;
+  transition: background-color 1s ease, border-color 1s ease, color 1s ease;
+}
+
+/* Hover state for every button/link/page-item */
+.pagination-nav .page-link:hover {
+  background-color: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+/* Remove the focus shadow and outline on click */
+.pagination-nav .page-link:focus {
+  box-shadow: none;
+  outline: 0;
+}
+
+/* Active (current) page style */
+.pagination-nav .page-item.active .page-link {
+  background-color: #000000;
+  border-color: #000000;
+  color: #ffffff;
+}
+
+/* Disabled buttons (PREVIOUS on page 1, NEXT on last page, "...") */
+.pagination-nav .page-item.disabled .page-link {
+  color: #8a8a8a;
+  pointer-events: none; /* make disabled items non-clickable */
+}
+
+/* The "..." separator dots */
+.pagination-nav .page-link.dots {
+  color: #ffffff;
+}
