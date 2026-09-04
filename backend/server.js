@@ -9,7 +9,13 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
+const corsOrigin = process.env.CORS_ORIGIN
+  ? (process.env.CORS_ORIGIN.includes(",")
+      ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+      : process.env.CORS_ORIGIN)
+  : "*";
+
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
 app.get("/", (req, res) => {

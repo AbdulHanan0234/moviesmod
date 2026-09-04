@@ -2,7 +2,12 @@
 // moviesApi — talks to the Express/MongoDB backend at /api/movies.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/movies`;
+const rawBase = import.meta.env.VITE_API_BASE_URL;
+const baseUrl = rawBase
+  ? rawBase.trim().replace(/\/+$/, "")
+  : (import.meta.env.DEV ? "http://localhost:5000" : "");
+
+const API = baseUrl ? `${baseUrl}/api/movies` : "/api/movies";
 
 export const moviesApi = {
   async list() {
