@@ -67,9 +67,13 @@ router.post("/verify-admin", (req, res) => {
 // PUT /api/movies/:tmdbId — update an existing movie (Requires Admin)
 router.put("/:tmdbId", verifyAdmin, async (req, res) => {
   try {
+    const updateData = { ...req.body };
+    if (!updateData.poster) {
+      delete updateData.poster;
+    }
     const movie = await Movie.findOneAndUpdate(
       { tmdbId: Number(req.params.tmdbId) },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
     if (!movie) return res.status(404).json({ message: "Movie not found" });

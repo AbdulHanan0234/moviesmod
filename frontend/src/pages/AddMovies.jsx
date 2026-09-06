@@ -8,7 +8,13 @@ import moviesApi from "../api/moviesApi";
 const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB     = "https://api.themoviedb.org/3";
 const IMG      = "https://image.tmdb.org/t/p";
-const poster   = (p, sz = "w185") => p ? `${IMG}/${sz}${p}` : null;
+const poster   = (p, sz = "w185") => {
+  if (!p) return null;
+  if (typeof p === "string" && (p.startsWith("http://") || p.startsWith("https://"))) {
+    return p;
+  }
+  return `${IMG}/${sz}${p.startsWith("/") ? p : `/${p}`}`;
+};
 
 // ─── constants ────────────────────────────────────────────────────────────────
 const RESOLUTIONS = ["360p","480p", "720p", "1080p", "2160p (4K)"];
@@ -81,10 +87,10 @@ const MoviePreview = ({ details, downloadLinks }) => {
 
   const movieObj = {
     type:     mediaType === "tv" ? "Series" : "Movie",
-    title:    tmdb.title || tmdb.name || "",
+    title:    tmdb.title || tmdb.name || details.title || "",
     genre:    (tmdb.genres || [])[0]?.name || "",
     lang:     "English",
-    imageUrl: poster(tmdb.poster_path, "w500"),
+    imageUrl: poster(tmdb.poster_path, "w500") || poster(details.poster, "w500"),
   };
 
   const genres = (tmdb.genres || []).map(g => g.name).join(", ");
@@ -99,9 +105,9 @@ const MoviePreview = ({ details, downloadLinks }) => {
 
   const displayDetail = {
     imdbID:           details.imdbID || "",
-    title:            tmdb.title || tmdb.name || "",
-    fullName:         tmdb.title || tmdb.name || "",
-    poster:           poster(tmdb.poster_path, "w500"),
+    title:            tmdb.title || tmdb.name || details.title || "",
+    fullName:         tmdb.title || tmdb.name || details.title || "",
+    poster:           poster(tmdb.poster_path, "w500") || poster(details.poster, "w500"),
     year:             (tmdb.release_date || tmdb.first_air_date || "").slice(0, 4),
     genres,
     released:         tmdb.release_date || tmdb.first_air_date || "",
@@ -469,26 +475,34 @@ const AddMovies = () => {
   const executePublish = async () => {
     setPublishError(null);
     const tmdb = fullDetails.tmdb || {};
+    const existingEntry = editingTmdbId != null ? publishedList.find((p) => p.tmdbId === editingTmdbId) : null;
+    const resolvedPoster =
+      poster(tmdb.poster_path) ||
+      poster(selectedResult.poster_path) ||
+      fullDetails.poster ||
+      existingEntry?.poster ||
+      "";
+
     const entry = {
       tmdbId:      selectedResult.id,
       mediaType:   fullDetails.mediaType,
       title:       selectedResult.title || selectedResult.name,
-      poster:      poster(selectedResult.poster_path),
-      genre:       (tmdb.genres || [])[0]?.name || "",
-      lang:        tmdb.original_language || "English",
-      imdbID:      fullDetails.imdbID || "",
-      overview:    tmdb.overview || "",
-      rating:      tmdb.vote_average || 0,
-      votes:       tmdb.vote_count || 0,
-      runtime:     tmdb.runtime || null,
-      released:    tmdb.release_date || tmdb.first_air_date || "",
-      director:    tmdb.credits?.crew?.filter(c => c.job === "Director").map(c => c.name).join(", ") || "",
-      writer:      tmdb.credits?.crew?.filter(c => c.department === "Writing").map(c => c.name).join(", ") || "",
-      actors:      (tmdb.credits?.cast || []).slice(0, 4).map(c => c.name),
+      poster:      resolvedPoster,
+      genre:       (tmdb.genres || [])[0]?.name || existingEntry?.genre || "",
+      lang:        tmdb.original_language || existingEntry?.lang || "English",
+      imdbID:      fullDetails.imdbID || existingEntry?.imdbID || "",
+      overview:    tmdb.overview || existingEntry?.overview || "",
+      rating:      tmdb.vote_average || existingEntry?.rating || 0,
+      votes:       tmdb.vote_count || existingEntry?.votes || 0,
+      runtime:     tmdb.runtime || existingEntry?.runtime || null,
+      released:    tmdb.release_date || tmdb.first_air_date || existingEntry?.released || "",
+      director:    tmdb.credits?.crew?.filter(c => c.job === "Director").map(c => c.name).join(", ") || existingEntry?.director || "",
+      writer:      tmdb.credits?.crew?.filter(c => c.department === "Writing").map(c => c.name).join(", ") || existingEntry?.writer || "",
+      actors:      (tmdb.credits?.cast || []).slice(0, 4).map(c => c.name).length ? (tmdb.credits?.cast || []).slice(0, 4).map(c => c.name) : (existingEntry?.actors || []),
       downloadLinks,
       seasonEpisodes: [],
       publishedAt: editingTmdbId != null
-        ? (publishedList.find((p) => p.tmdbId === editingTmdbId)?.publishedAt || new Date().toISOString())
+        ? (existingEntry?.publishedAt || new Date().toISOString())
         : new Date().toISOString(),
     };
     try {
@@ -525,10 +539,17 @@ const AddMovies = () => {
       id: entry.tmdbId,
       title: entry.title,
       name: entry.title,
-      poster_path: null,
+      poster_path: entry.poster || null,
       media_type: entry.mediaType,
     });
-    setFullDetails(null);
+    setFullDetails({
+      tmdb: {},
+      mediaType: entry.mediaType,
+      imdbID: entry.imdbID || "",
+      seasonInfo: null,
+      poster: entry.poster,
+      title: entry.title,
+    });
     setLoadingDetails(true);
     setMediaType(entry.mediaType);
     try {
@@ -551,7 +572,17 @@ const AddMovies = () => {
           overview: tmb.overview,
         };
       }
-      setFullDetails({ tmdb: tmb, mediaType: mt, imdbID, seasonInfo });
+      if (tmb?.poster_path) {
+        setSelectedResult((prev) => (prev ? { ...prev, poster_path: tmb.poster_path } : prev));
+      }
+      setFullDetails({
+        tmdb: tmb,
+        mediaType: mt,
+        imdbID,
+        seasonInfo,
+        poster: entry.poster || poster(tmb.poster_path),
+        title: entry.title,
+      });
     } catch (e) {
       console.error(e);
     }
