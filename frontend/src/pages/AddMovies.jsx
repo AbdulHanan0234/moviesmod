@@ -305,6 +305,58 @@ const AddMovies = () => {
   const [mode,           setMode]           = useState("add"); // "add" | "manage"
   const [manageQuery,    setManageQuery]    = useState("");
 
+  // admin security
+  const [isAdminUnlocked,   setIsAdminUnlocked]   = useState(() => moviesApi.isAdminUnlocked());
+  const [adminModalOpen,    setAdminModalOpen]    = useState(false);
+  const [adminModalConfig,  setAdminModalConfig]  = useState({ title: "", desc: "", onSuccess: null });
+  const [adminInputPass,    setAdminInputPass]    = useState("");
+  const [adminModalError,   setAdminModalError]   = useState("");
+  const [adminModalLoading, setAdminModalLoading] = useState(false);
+  const [showPassword,      setShowPassword]      = useState(false);
+
+  const requestAdminAccess = (actionName, targetTitle, onSuccess) => {
+    if (isAdminUnlocked) {
+      onSuccess();
+      return;
+    }
+    setAdminModalError("");
+    setAdminInputPass("");
+    setShowPassword(false);
+    setAdminModalConfig({
+      title: "Admin Password Required",
+      desc: `Please enter your admin password to ${actionName} "${targetTitle}".`,
+      onSuccess,
+    });
+    setAdminModalOpen(true);
+  };
+
+  const handleAdminSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!adminInputPass.trim()) {
+      setAdminModalError("Please enter the admin password.");
+      return;
+    }
+    setAdminModalLoading(true);
+    setAdminModalError("");
+    try {
+      await moviesApi.verifyAdminPassword(adminInputPass.trim());
+      setIsAdminUnlocked(true);
+      setAdminModalOpen(false);
+      if (adminModalConfig.onSuccess) {
+        adminModalConfig.onSuccess();
+      }
+    } catch (err) {
+      setAdminModalError(err.message || "Incorrect admin password.");
+    } finally {
+      setAdminModalLoading(false);
+    }
+  };
+
+  const handleLockAdmin = () => {
+    moviesApi.clearAdminPassword();
+    setIsAdminUnlocked(false);
+  };
+
   useEffect(() => {
     moviesApi.list().then(setPublishedList).catch(() => {});
   }, []);
@@ -414,8 +466,7 @@ const AddMovies = () => {
   // ── Publish / Update ────────────────────────────────────────────────────────
   const [publishError, setPublishError] = useState(null);
 
-  const handlePublish = async () => {
-    if (published || !selectedResult || !fullDetails) return;
+  const executePublish = async () => {
     setPublishError(null);
     const tmdb = fullDetails.tmdb || {};
     const entry = {
@@ -448,8 +499,22 @@ const AddMovies = () => {
       setPublished(true);
     } catch (e) {
       console.error("Publish failed:", e);
+      if (e.message?.includes("Unauthorized") || e.message?.includes("Admin")) {
+        setIsAdminUnlocked(false);
+        moviesApi.clearAdminPassword();
+      }
       setPublishError(e.message || "Failed to publish. Is the backend running?");
     }
+  };
+
+  const handlePublish = async () => {
+    if (published || !selectedResult || !fullDetails) return;
+    // Updating existing movie requires admin auth
+    if (editingTmdbId != null && !isAdminUnlocked) {
+      requestAdminAccess("update", selectedTitle, executePublish);
+      return;
+    }
+    await executePublish();
   };
 
   // ── Edit an already-published movie/series ─────────────────────────────────
@@ -505,6 +570,11 @@ const AddMovies = () => {
       if (editingTmdbId === tmdbId) handleUnselect();
     } catch (e) {
       console.error("Delete failed:", e);
+      if (e.message?.includes("Unauthorized") || e.message?.includes("Admin")) {
+        setIsAdminUnlocked(false);
+        moviesApi.clearAdminPassword();
+      }
+      alert(e.message || "Failed to delete movie.");
     }
   };
 
@@ -518,7 +588,27 @@ const AddMovies = () => {
         {/* ══════════ LEFT PANEL ══════════ */}
         <aside className="am-panel">
           <div className="am-panel-header">
-            <h2 className="am-panel-title"><i className="fa fa-film" /> Add Movie</h2>
+            <div className="am-panel-header-row">
+              <h2 className="am-panel-title"><i className="fa fa-film" /> Add Movie</h2>
+              <div className="am-admin-pill-wrap">
+                {isAdminUnlocked ? (
+                  <span className="am-admin-pill am-admin-pill--unlocked" title="Admin access unlocked for this session">
+                    <i className="fa fa-unlock-alt" /> Admin
+                    <button className="am-pill-lock-btn" onClick={handleLockAdmin} title="Lock Admin Access">
+                      <i className="fa fa-lock" />
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    className="am-admin-pill am-admin-pill--locked"
+                    onClick={() => requestAdminAccess("manage", "movie management", () => {})}
+                    title="Click to enter admin password"
+                  >
+                    <i className="fa fa-lock" /> Admin Lock
+                  </button>
+                )}
+              </div>
+            </div>
             <p className="am-panel-sub">Search TMDB · add quality links · publish.</p>
           </div>
 
@@ -574,8 +664,20 @@ const AddMovies = () => {
                             </span>
                           </span>
                           <span className="am-managed-actions">
-                            <button className="am-mini-btn" onClick={() => { startEdit(p); setMode("add"); }} title="Edit">Edit</button>
-                            <button className="am-mini-btn am-mini-btn--danger" onClick={() => handleDelete(p.tmdbId)} title="Delete">Delete</button>
+                            <button
+                              className="am-mini-btn"
+                              onClick={() => requestAdminAccess("edit", p.title, () => { startEdit(p); setMode("add"); })}
+                              title="Edit (Requires Admin)"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="am-mini-btn am-mini-btn--danger"
+                              onClick={() => requestAdminAccess("delete", p.title, () => handleDelete(p.tmdbId))}
+                              title="Delete (Requires Admin)"
+                            >
+                              Delete
+                            </button>
                           </span>
                         </li>
                       ))}
@@ -828,6 +930,91 @@ const AddMovies = () => {
           )}
         </section>
       </div>
+
+      {/* ══════════ ADMIN PASSWORD MODAL ══════════ */}
+      {adminModalOpen && (
+        <div className="am-modal-overlay" onClick={() => !adminModalLoading && setAdminModalOpen(false)}>
+          <div className="am-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="am-modal-header">
+              <div className="am-modal-icon-wrap">
+                <i className="fa fa-lock" />
+              </div>
+              <div className="am-modal-title-box">
+                <h3 className="am-modal-title">{adminModalConfig.title || "Admin Authentication"}</h3>
+                <p className="am-modal-desc">{adminModalConfig.desc}</p>
+              </div>
+              <button
+                type="button"
+                className="am-modal-close"
+                onClick={() => !adminModalLoading && setAdminModalOpen(false)}
+                disabled={adminModalLoading}
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleAdminSubmit} className="am-modal-form">
+              <div className="am-form-group am-form-group--full">
+                <label className="am-form-label" htmlFor="am-admin-password-input">
+                  Enter Admin Password
+                </label>
+                <div className="am-pass-input-box">
+                  <input
+                    id="am-admin-password-input"
+                    className="am-input am-pass-input"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Admin password…"
+                    value={adminInputPass}
+                    onChange={(e) => setAdminInputPass(e.target.value)}
+                    autoFocus
+                    disabled={adminModalLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="am-pass-toggle-btn"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <i className={`fa ${showPassword ? "fa-eye-slash" : "fa-eye"}`} />
+                  </button>
+                </div>
+              </div>
+
+              {adminModalError && (
+                <div className="am-modal-error-alert">
+                  <i className="fa fa-exclamation-circle" />
+                  <span>{adminModalError}</span>
+                </div>
+              )}
+
+              <div className="am-modal-btn-row">
+                <button
+                  type="button"
+                  className="am-btn am-btn-back"
+                  onClick={() => setAdminModalOpen(false)}
+                  disabled={adminModalLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="am-btn am-btn-add am-btn-verify-submit"
+                  disabled={adminModalLoading || !adminInputPass.trim()}
+                >
+                  {adminModalLoading ? (
+                    <span><i className="fa fa-spinner fa-spin" /> Verifying…</span>
+                  ) : (
+                    <span><i className="fa fa-unlock-alt" /> Authenticate</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };
