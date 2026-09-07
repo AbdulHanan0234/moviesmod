@@ -17,10 +17,12 @@ const useTmdbMovie = (identifier, seasonRange) => {
   const seasonList = seasonRange?.list || [];
   const cacheKey = `${imdbID || tmdbId}_s${seasonList.join(",") || "0"}`;
 
+  const isCacheValid = (key) => Boolean(tmdbCache[key]);
+
   const prevCacheKeyRef = useRef(cacheKey);
 
   const [state, setState] = useState(() => {
-    if (cacheKey && tmdbCache[cacheKey]) {
+    if (cacheKey && isCacheValid(cacheKey)) {
       return { data: tmdbCache[cacheKey], loading: false, error: null };
     }
     return { data: null, loading: Boolean(imdbID || tmdbId), error: null };
@@ -32,7 +34,7 @@ const useTmdbMovie = (identifier, seasonRange) => {
     }
 
     if (!imdbID && !tmdbId) return;
-    if (tmdbCache[cacheKey]) {
+    if (isCacheValid(cacheKey)) {
       setState({ data: tmdbCache[cacheKey], loading: false, error: null });
       return;
     }
@@ -71,7 +73,7 @@ const useTmdbMovie = (identifier, seasonRange) => {
         }
 
         const detailRes = await fetch(
-          `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${key}&append_to_response=credits,external_ids`
+          `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${key}&append_to_response=credits,external_ids,images&include_image_language=en,null`
         );
         detail = await detailRes.json();
         if (cancelled) return;
@@ -144,6 +146,23 @@ const useTmdbMovie = (identifier, seasonRange) => {
 
         const imdbID = detail.external_ids?.imdb_id || "";
 
+        // Extract real screenshots from TMDB backdrops & episode stills
+        const tmdbBackdrops = (detail.images?.backdrops || [])
+          .filter((b) => b.file_path)
+          .slice(0, 8)
+          .map((b) => tmdbBackdrop(b.file_path, "w780"));
+
+        const episodeStills = seasonsData
+          .flatMap((s) => s.episodes || [])
+          .map((ep) => (ep.still ? ep.still.replace("w300", "w780") : null))
+          .filter(Boolean);
+
+        const realScreenshots = tmdbBackdrops.length > 0
+          ? tmdbBackdrops
+          : (episodeStills.length > 0
+              ? episodeStills.slice(0, 8)
+              : (detail.backdrop_path ? [tmdbBackdrop(detail.backdrop_path, "w780")] : []));
+
         const result = {
           tmdbId: id,
           mediaType,
@@ -153,6 +172,7 @@ const useTmdbMovie = (identifier, seasonRange) => {
           overview: detail.overview || firstSeason?.overview || "",
           poster: tmdbPoster(detail.poster_path),
           backdrop: tmdbBackdrop(detail.backdrop_path),
+          screenshots: realScreenshots.length > 0 ? realScreenshots.slice(0, 8) : (detail.backdrop_path ? [tmdbBackdrop(detail.backdrop_path, "w780")] : []),
           rating: detail.vote_average ? Number(detail.vote_average.toFixed(1)) : 0,
           votes: detail.vote_count || 0,
           runtime: detail.runtime || null,

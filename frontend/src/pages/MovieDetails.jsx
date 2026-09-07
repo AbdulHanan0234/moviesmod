@@ -24,6 +24,7 @@ const MovieDetails = () => {
   const { id } = useParams();
   const [published, setPublished] = useState([]);
   const [publishedLoading, setPublishedLoading] = useState(true);
+  const [tmdbScreenshots, setTmdbScreenshots] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -43,12 +44,32 @@ const MovieDetails = () => {
   const movie = published.find((m) => String(m.id) === String(id));
   const siteData = movie ? getMovieDetails(movie) : null;
 
+  // Fetch TMDB screenshots directly (proven approach from AddMovies preview)
+  useEffect(() => {
+    if (!movie?._published) return;
+    const mt = movie.type === "Series" ? "tv" : "movie";
+    const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
+    if (!tmdbKey) return;
+
+    let active = true;
+    fetch(`https://api.themoviedb.org/3/${mt}/${movie.id}?api_key=${tmdbKey}&append_to_response=images&include_image_language=en,null`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!active) return;
+        const shots = (data.images?.backdrops || [])
+          .filter((b) => b.file_path)
+          .slice(0, 8)
+          .map((b) => `https://image.tmdb.org/t/p/w780${b.file_path}`);
+        setTmdbScreenshots(shots);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [movie?._published, movie?.type, movie?.id]);
+
   const tmdbIdentifier = movie?._published
     ? { tmdbId: movie.id, mediaType: movie.type === "Series" ? "tv" : "movie" }
     : { imdbID: siteData?.imdbID };
 
-  // For published titles we already store seasons/episodes, so skip the
-  // per-season TMDB fetch and just grab the show/movie metadata.
   const { data: tmdb, loading: tmdbLoading } = useTmdbMovie(
     tmdbIdentifier,
     movie?._published ? null : siteData?.seasonRange,
@@ -128,7 +149,11 @@ const MovieDetails = () => {
     seasonRange: siteData.seasonRange,
     episodesPerSeason: t.episodesPerSeason || [],
     downloads: siteData.downloads,
-    screenshots: siteData.screenshots,
+    screenshots: (tmdbScreenshots.length > 0)
+      ? tmdbScreenshots
+      : (t.screenshots && t.screenshots.length > 0)
+        ? t.screenshots
+        : siteData.screenshots,
     categories: siteData.categories,
     blurb: siteData.blurb,
     description: [siteData.blurb, plot, siteData.description[2]],

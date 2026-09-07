@@ -39,5 +39,6 @@ export const transformPublished = (entry) => {
     director: entry.director || "",
     writer: entry.writer || "",
     actors: entry.actors || [],
+    screenshots: Array.isArray(entry.screenshots) ? entry.screenshots : [],
   };
 };

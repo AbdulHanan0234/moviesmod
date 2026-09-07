@@ -43,6 +43,7 @@ const movieSchema = new mongoose.Schema(
     actors:      [{ type: String }],
     downloadLinks: [downloadLinkSchema],
     seasonEpisodes: [downloadLinkSchema],
+    screenshots: [{ type: String }],
     publishedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

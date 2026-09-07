@@ -651,6 +651,12 @@
 
 .am-preview-content {
   max-width: 860px;
+  overflow-x: hidden;
+}
+
+.am-preview-content .screenshots img {
+  max-height: 400px;
+  object-fit: cover;
 }
 
 /* empty state */
@@ -723,6 +729,10 @@
 }
 .am-manage-view {
   margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .am-managed {
@@ -754,7 +764,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 220px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 .am-managed-item {

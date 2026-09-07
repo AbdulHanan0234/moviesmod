@@ -3,6 +3,7 @@ import "./AddMovies.css";
 import MovieInfoCard from "../components/MovieInfoCard";
 import SeriesInfo from "../components/SeriesInfo";
 import moviesApi from "../api/moviesApi";
+import Screenshots from "../components/Screenshots";
 
 // ─── TMDB helpers ─────────────────────────────────────────────────────────────
 const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -103,6 +104,12 @@ const MoviePreview = ({ details, downloadLinks }) => {
   const writer   = tmdb.credits?.crew?.filter(c => c.department === "Writing").map(c => c.name).join(", ") || "";
   const actors   = (tmdb.credits?.cast || []).slice(0, 4).map(c => c.name);
 
+  // Extract real screenshots from TMDB backdrops
+  const screenshots = (tmdb.images?.backdrops || [])
+    .filter(b => b.file_path)
+    .slice(0, 8)
+    .map(b => `https://image.tmdb.org/t/p/w780${b.file_path}`);
+
   const displayDetail = {
     imdbID:           details.imdbID || "",
     title:            tmdb.title || tmdb.name || details.title || "",
@@ -133,6 +140,7 @@ const MoviePreview = ({ details, downloadLinks }) => {
     <div className="am-preview-content">
       <MovieInfoCard detail={displayDetail} movie={movieObj} loading={false} />
       <SeriesInfo    movie={movieObj}        detail={displayDetail} plot={displayDetail.plot} />
+      {screenshots.length > 0 && <Screenshots images={screenshots} title={displayDetail.title} />}
       <DownloadPreview title={displayDetail.title} downloadLinks={downloadLinks} mediaType={mediaType} />
     </div>
   );
@@ -404,7 +412,7 @@ const AddMovies = () => {
 
     try {
       const mt  = result.media_type; // "movie" or "tv"
-      const res = await fetch(`${TMDB}/${mt}/${result.id}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids`);
+      const res = await fetch(`${TMDB}/${mt}/${result.id}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids,images`);
       const tmb = await res.json();
 
       const imdbID = tmb.external_ids?.imdb_id || "";
@@ -554,7 +562,7 @@ const AddMovies = () => {
     setMediaType(entry.mediaType);
     try {
       const mt = entry.mediaType;
-      const res = await fetch(`${TMDB}/${mt}/${entry.tmdbId}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids`);
+      const res = await fetch(`${TMDB}/${mt}/${entry.tmdbId}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids,images`);
       const tmb = await res.json();
       const imdbID = tmb.external_ids?.imdb_id || entry.imdbID || "";
       let seasonInfo = null;

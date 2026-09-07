@@ -13,8 +13,12 @@ const textPart = (text) =>
     .replace(/%20/g, "+")
     .replace(/%27/g, "'");
 
-const genScreenshots = (movie) =>
-  [1, 2, 3].map((n) => `${SCREEN_BASE}${textPart(movie.title)}+Screen+${n}`);
+const genScreenshots = (movie) => {
+  if (Array.isArray(movie.screenshots) && movie.screenshots.length > 0) {
+    return movie.screenshots;
+  }
+  return [1, 2, 3].map((n) => `${SCREEN_BASE}${textPart(movie.title)}+Screen+${n}`);
+};
 
 const getAudioTag = (movie) => {
   const lang = movie.lang;
