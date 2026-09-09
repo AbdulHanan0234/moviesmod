@@ -57,3 +57,22 @@
 .pagination-nav .page-link.dots {
   color: #ffffff;
 }
+
+/* Responsive Pagination */
+@media (max-width: 865px) {
+  .pagination-nav {
+    padding: 15px 10px;
+    margin: 20px auto;
+  }
+
+  .pagination-nav .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .pagination-nav .page-link {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}

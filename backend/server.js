@@ -6,8 +6,6 @@ import movieRoutes from "./routes/movieRoutes.js";
 
 dotenv.config();
 
-connectDB();
-
 const app = express();
 const corsOrigin = process.env.CORS_ORIGIN
   ? (process.env.CORS_ORIGIN.includes(",")
@@ -25,6 +23,12 @@ app.get("/", (req, res) => {
 app.use("/api/movies", movieRoutes);
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+connectDB().catch((err) => {
+  console.error("Failed to connect to MongoDB:", err.message);
+  console.error("Add your current IP to MongoDB Atlas whitelist: https://cloud.mongodb.com/v2/ -> Network Access -> Add IP Address");
 });

@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000,
+    });
 
     // Guard against the classic "my data vanished" trap: when the URI has no
     // database name, Mongoose silently writes everything into a default db.
@@ -15,7 +17,7 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host} / db: ${conn.connection.name || "(default)"}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    process.exit(1);
+    throw error;
   }
 };
 

@@ -7,15 +7,13 @@
   width: 100%;
   color: white;
   padding: 0 30px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
-
-  ;
 }
 
 .movie-card {
-  width: 200px;
+  width: 100%;
   max-width: 100%;
   background-color: #27272a;
   border: 0.8px solid #3f3f46;
@@ -24,7 +22,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* box-shadow: 0 1px 2px #0000000d; */
 }
 
 .movie-card-image-wrap {
@@ -66,6 +63,32 @@
 .movie-card-link {
   display: block;
   height: 100%;
+}
+
+/* Responsive Grid */
+@media (min-width: 480px) {
+  .grid-body {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-body {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-body {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-body {
+    padding: 0 10px;
+    gap: 8px;
+  }
 }
 
 /* .movie-card-badges {

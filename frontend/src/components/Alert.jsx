@@ -1,7 +1,12 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import "./Alert.css"
 
 const Alert = () => {
+  const [visible, setVisible] = useState(true);
+
+  if (!visible) return null;
+
   return (
     <div className="alert rounded-3 d-flex align-items-center justify-content-center text-center">
     <p>
@@ -15,7 +20,7 @@ const Alert = () => {
       </Link>
       Bookmarks Now.
     </p>
-    <button className="alert-x">
+    <button className="alert-x" onClick={() => setVisible(false)}>
       <i className="fa fa-times" aria-hidden="true"></i>
     </button>
   </div>
