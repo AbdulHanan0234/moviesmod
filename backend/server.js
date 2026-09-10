@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import compression from "compression";
 import connectDB from "./config/db.js";
 import movieRoutes from "./routes/movieRoutes.js";
 
@@ -14,6 +15,7 @@ const corsOrigin = process.env.CORS_ORIGIN
   : "*";
 
 app.use(cors({ origin: corsOrigin }));
+app.use(compression()); // gzip JSON — the movie list shrinks ~5-10x on the wire
 app.use(express.json());
 
 app.get("/", (req, res) => {

@@ -49,6 +49,9 @@ const movieSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Every list query sorts by publishedAt — keep it out of in-memory sorts.
+movieSchema.index({ publishedAt: -1 });
+
 const Movie = mongoose.model("Movie", movieSchema);
 
 export default Movie;

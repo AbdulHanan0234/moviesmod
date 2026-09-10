@@ -8,6 +8,13 @@ const API = baseUrl ? `${baseUrl}/api/movies` : "/api/movies";
 
 const ADMIN_KEY = "moviesmod_admin_pass";
 
+// In-memory cache for list responses so revisiting pages (Home → Details →
+// back, or switching tags) doesn't refetch. Cleared by add/update/remove.
+const listCache = new Map();
+
+const listKey = (opts = {}) =>
+  opts.all ? "all" : `page:${opts.page || 1}:limit:${opts.limit || 20}`;
+
 export const moviesApi = {
   getAdminPassword() {
     return sessionStorage.getItem(ADMIN_KEY) || "";
@@ -40,13 +47,41 @@ export const moviesApi = {
     return true;
   },
 
-  async list() {
-    const res = await fetch(API);
+  // list() → { movies, total, page, totalPages }
+  //   list({ page, limit }) — one page of light-weight movie docs
+  //   list({ all: 1 })      — every movie, light fields (tag/search pages)
+  // A backend that hasn't been restarted yet returns a bare array and ignores
+  // the pagination params — normalize it so the app works against either.
+  async list(opts = {}) {
+    const key = listKey(opts);
+    if (listCache.has(key)) return listCache.get(key);
+
+    const params = opts.all
+      ? "?all=1"
+      : `?page=${opts.page || 1}&limit=${opts.limit || 20}`;
+
+    const res = await fetch(`${API}${params}`);
     if (!res.ok) throw new Error("Failed to fetch movies");
+
+    const data = await res.json();
+    const normalized = Array.isArray(data)
+      ? { movies: data, total: data.length, page: 1, totalPages: 1 }
+      : data;
+    listCache.set(key, normalized);
+    return normalized;
+  },
+
+  // get() → the full document for one movie (download links, screenshots…)
+  // or null when it doesn't exist.
+  async get(tmdbId) {
+    const res = await fetch(`${API}/${tmdbId}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("Failed to fetch movie");
     return res.json();
   },
 
   async add(movie) {
+    listCache.clear();
     const res = await fetch(API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,6 +95,7 @@ export const moviesApi = {
   },
 
   async update(movie, adminPass) {
+    listCache.clear();
     const pass = adminPass || this.getAdminPassword();
     const res = await fetch(`${API}/${movie.tmdbId}`, {
       method: "PUT",
@@ -80,6 +116,7 @@ export const moviesApi = {
   },
 
   async remove(tmdbId, adminPass) {
+    listCache.clear();
     const pass = adminPass || this.getAdminPassword();
     const res = await fetch(`${API}/${tmdbId}`, {
       method: "DELETE",

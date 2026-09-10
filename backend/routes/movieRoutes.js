@@ -58,21 +58,69 @@ router.post("/verify-admin", (req, res) => {
   return res.status(401).json({ success: false, message: "Invalid admin password" });
 });
 
-// GET /api/movies — list all published movies
+// List responses skip the heavy per-title arrays (download links with
+// per-episode URLs, screenshots). The grid/sidebar never render them — pages
+// that do fetch them use the single-movie endpoint below.
+const LIST_PROJECTION = "-downloadLinks -seasonEpisodes -screenshots -overview -__v";
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 60;
+
+// GET /api/movies — list published movies
+//   ?page=2&limit=20 — one page (default view)
+//   ?all=1           — every movie, light fields (tag/search pages filter client-side)
+// Returns { movies, total, page, totalPages }.
 router.get("/", async (req, res) => {
   try {
-    const movies = await Movie.find().sort({ publishedAt: -1 });
-    res.json(movies);
+    const sort = { publishedAt: -1, tmdbId: -1 };
+
+    if (req.query.all === "1") {
+      const movies = await Movie.find()
+        .select(LIST_PROJECTION)
+        .sort(sort)
+        .lean();
+      res.set("Cache-Control", "no-cache"); // revalidate → cheap 304s
+      return res.json({
+        movies,
+        total: movies.length,
+        page: 1,
+        totalPages: 1,
+      });
+    }
+
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE)
+    );
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
+    const [movies, total] = await Promise.all([
+      Movie.find()
+        .select(LIST_PROJECTION)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Movie.countDocuments(),
+    ]);
+
+    res.set("Cache-Control", "no-cache");
+    res.json({
+      movies,
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// GET /api/movies/:tmdbId — get a single movie by TMDB ID
+// GET /api/movies/:tmdbId — get a single movie by TMDB ID (full document)
 router.get("/:tmdbId", async (req, res) => {
   try {
-    const movie = await Movie.findOne({ tmdbId: Number(req.params.tmdbId) });
+    const movie = await Movie.findOne({ tmdbId: Number(req.params.tmdbId) }).lean();
     if (!movie) return res.status(404).json({ message: "Movie not found" });
+    res.set("Cache-Control", "no-cache");
     res.json(movie);
   } catch (error) {
     res.status(500).json({ message: error.message });

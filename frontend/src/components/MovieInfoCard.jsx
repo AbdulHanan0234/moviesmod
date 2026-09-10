@@ -12,7 +12,6 @@ const MovieInfoCard = ({ detail, movie, loading }) => {
   const imdbID = detail?.imdbID || "";
   const poster = detail?.poster || movie?.imageUrl || "/placeholder.png";
   const title = detail?.title || movie?.title || "";
-  const year = detail?.year || "";
   const rated = detail?.rated || "N/A";
   const genre = detail?.genres || movie?.genre || "N/A";
   const released = detail?.released || "N/A";

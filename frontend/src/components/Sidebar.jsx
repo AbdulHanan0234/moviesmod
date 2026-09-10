@@ -65,7 +65,14 @@ const Sidebar = ({ tags, popular }) => {
         <ul className="popular-list">
           {popular.map((p) => (
             <li className="popular-item" key={p.id}>
-              <img src={p.imageUrl} alt={p.title} />
+              <img
+                src={p.imageUrl}
+                alt={p.title}
+                width="72"
+                height="108"
+                loading="lazy"
+                decoding="async"
+              />
               <Link to={`/movie-details/${p.id}`}>
                 {p.title.startsWith("Download ") ? p.title : `Download ${p.title}`}
               </Link>

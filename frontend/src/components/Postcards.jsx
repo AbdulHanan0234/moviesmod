@@ -18,7 +18,15 @@ const PosterCard = ({ movie }) => {
     >
       <article className="movie-card">
         <div className="movie-card-image-wrap">
-          <img src={imgSrc} alt={title} className="movie-card-img" />
+          <img
+            src={imgSrc}
+            alt={title}
+            className="movie-card-img"
+            width="300"
+            height="450"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
         <header className="movie-card-header">
           <h2 className="movie-card-title">{title}</h2>

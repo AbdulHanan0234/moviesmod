@@ -372,7 +372,7 @@ const AddMovies = () => {
   };
 
   useEffect(() => {
-    moviesApi.list().then(setPublishedList).catch(() => {});
+    moviesApi.list({ all: 1 }).then((r) => setPublishedList(r.movies)).catch(() => {});
   }, []);
 
   // ── TMDB search (debounced 450ms) ─────────────────────────────────────────
@@ -516,8 +516,8 @@ const AddMovies = () => {
     try {
       if (editingTmdbId != null) await moviesApi.update(entry);
       else await moviesApi.add(entry);
-      const updated = await moviesApi.list();
-      setPublishedList(updated);
+      const updated = await moviesApi.list({ all: 1 });
+      setPublishedList(updated.movies);
       setPublished(true);
     } catch (e) {
       console.error("Publish failed:", e);
@@ -540,36 +540,43 @@ const AddMovies = () => {
   };
 
   // ── Edit an already-published movie/series ─────────────────────────────────
-  const startEdit = async (entry) => {
-    setEditingTmdbId(entry.tmdbId);
+  const startEdit = async (listEntry) => {
+    setEditingTmdbId(listEntry.tmdbId);
     setPublished(false);
     setSelectedResult({
-      id: entry.tmdbId,
-      title: entry.title,
-      name: entry.title,
-      poster_path: entry.poster || null,
-      media_type: entry.mediaType,
+      id: listEntry.tmdbId,
+      title: listEntry.title,
+      name: listEntry.title,
+      poster_path: listEntry.poster || null,
+      media_type: listEntry.mediaType,
     });
     setFullDetails({
       tmdb: {},
-      mediaType: entry.mediaType,
-      imdbID: entry.imdbID || "",
+      mediaType: listEntry.mediaType,
+      imdbID: listEntry.imdbID || "",
       seasonInfo: null,
-      poster: entry.poster,
-      title: entry.title,
+      poster: listEntry.poster,
+      title: listEntry.title,
     });
     setLoadingDetails(true);
-    setMediaType(entry.mediaType);
+    setMediaType(listEntry.mediaType);
+    let fullDoc = null;
     try {
-      const mt = entry.mediaType;
-      const res = await fetch(`${TMDB}/${mt}/${entry.tmdbId}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids,images`);
+      // Manage-list entries are light (no downloadLinks) — fetch the full
+      // document alongside the TMDB details.
+      const [doc, res] = await Promise.all([
+        moviesApi.get(listEntry.tmdbId).catch(() => null),
+        fetch(`${TMDB}/${listEntry.mediaType}/${listEntry.tmdbId}?api_key=${TMDB_KEY}&append_to_response=credits,external_ids,images`),
+      ]);
+      fullDoc = doc;
       const tmb = await res.json();
-      const imdbID = tmb.external_ids?.imdb_id || entry.imdbID || "";
+      const imdbID = tmb.external_ids?.imdb_id || listEntry.imdbID || "";
       let seasonInfo = null;
+      const mt = listEntry.mediaType;
       if (mt === "tv") {
         const totalSeasons = Math.max(
           tmb.number_of_seasons || 0,
-          (entry.downloadLinks && entry.downloadLinks[0]?.seasons?.length) || 0,
+          (fullDoc?.downloadLinks && fullDoc.downloadLinks[0]?.seasons?.length) || 0,
           1
         );
         const list = Array.from({ length: totalSeasons }, (_, i) => i + 1);
@@ -588,15 +595,15 @@ const AddMovies = () => {
         mediaType: mt,
         imdbID,
         seasonInfo,
-        poster: entry.poster || poster(tmb.poster_path),
-        title: entry.title,
+        poster: fullDoc?.poster || poster(tmb.poster_path),
+        title: listEntry.title,
       });
     } catch (e) {
       console.error(e);
     }
     setLoadingDetails(false);
     setDownloadLinks(
-      entry.downloadLinks ? JSON.parse(JSON.stringify(entry.downloadLinks)) : []
+      fullDoc?.downloadLinks ? JSON.parse(JSON.stringify(fullDoc.downloadLinks)) : []
     );
   };
 
@@ -604,8 +611,8 @@ const AddMovies = () => {
   const handleDelete = async (tmdbId) => {
     try {
       await moviesApi.remove(tmdbId);
-      const updated = await moviesApi.list();
-      setPublishedList(updated);
+      const updated = await moviesApi.list({ all: 1 });
+      setPublishedList(updated.movies);
       if (editingTmdbId === tmdbId) handleUnselect();
     } catch (e) {
       console.error("Delete failed:", e);

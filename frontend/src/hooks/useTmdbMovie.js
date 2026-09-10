@@ -72,6 +72,19 @@ const useTmdbMovie = (identifier, seasonRange) => {
           return;
         }
 
+        // Start the season fetches now so they run in parallel with the
+        // detail request (the id is known by this point on every path).
+        const seasonFetch =
+          mediaType === "tv" && seasonList.length > 0
+            ? Promise.all(
+                seasonList.map((sn) =>
+                  fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sn}?api_key=${key}`)
+                    .then((r) => (r.ok ? r.json() : null))
+                    .catch(() => null)
+                )
+              )
+            : null;
+
         const detailRes = await fetch(
           `https://api.themoviedb.org/3/${mediaType}/${id}?api_key=${key}&append_to_response=credits,external_ids,images&include_image_language=en,null`
         );
@@ -107,15 +120,10 @@ const useTmdbMovie = (identifier, seasonRange) => {
           }
         }
 
-        // Fetch individual season data for each requested season
+        // Collect the season data fetched in parallel above
         const seasonsData = [];
-        if (mediaType === "tv" && seasonList.length > 0) {
-          const fetches = seasonList.map((sn) =>
-            fetch(`https://api.themoviedb.org/3/tv/${id}/season/${sn}?api_key=${key}`)
-              .then((r) => (r.ok ? r.json() : null))
-              .catch(() => null)
-          );
-          const results = await Promise.all(fetches);
+        if (seasonFetch) {
+          const results = await seasonFetch;
           if (cancelled) return;
 
           for (let i = 0; i < seasonList.length; i++) {

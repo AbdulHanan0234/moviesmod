@@ -16,14 +16,11 @@ const EpisodePage = () => {
 
   useEffect(() => {
     let active = true;
-    moviesApi.list().then((list) => {
+    // One request for just this series' document (with its download links)
+    // instead of downloading the whole library and picking one.
+    moviesApi.get(movieId).then((doc) => {
       if (!active) return;
-      const found =
-        list
-          .map(transformPublished)
-          .find((m) => String(m.id) === String(movieId)) ||
-        null;
-      setMovie(found);
+      setMovie(doc ? transformPublished(doc) : null);
       setLoading(false);
     }).catch(() => {
       if (active) setLoading(false);

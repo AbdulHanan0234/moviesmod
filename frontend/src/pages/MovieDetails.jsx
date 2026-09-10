@@ -22,49 +22,35 @@ import useTmdbMovie from "../hooks/useTmdbMovie";
 
 const MovieDetails = () => {
   const { id } = useParams();
+  // The fetched document is stamped with the id it was fetched for, so a
+  // route change to another movie derives `loading` instead of cascading
+  // setState calls in the effect.
+  const [fetched, setFetched] = useState({ id, doc: null, ready: false });
   const [published, setPublished] = useState([]);
-  const [publishedLoading, setPublishedLoading] = useState(true);
-  const [tmdbScreenshots, setTmdbScreenshots] = useState([]);
 
   useEffect(() => {
     let active = true;
-    moviesApi.list().then((list) => {
-      if (active) {
-        setPublished(list.map(transformPublished));
-        setPublishedLoading(false);
-      }
+    // The movie document (with download links) and the light full list for
+    // the sidebar/related sections are independent — fetch them in parallel.
+    Promise.all([
+      moviesApi.get(id),
+      moviesApi.list({ all: 1 }).catch(() => ({ movies: [] })),
+    ]).then(([doc, list]) => {
+      if (!active) return;
+      setFetched({ id, doc: doc ? transformPublished(doc) : null, ready: true });
+      setPublished((list.movies || []).map(transformPublished));
     }).catch(() => {
-      if (active) setPublishedLoading(false);
+      if (!active) return;
+      setFetched({ id, doc: null, ready: true });
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [id]);
 
-  const movie = published.find((m) => String(m.id) === String(id));
+  const loading = fetched.id !== id || !fetched.ready;
+  const movie = fetched.id === id ? fetched.doc : null;
   const siteData = movie ? getMovieDetails(movie) : null;
-
-  // Fetch TMDB screenshots directly (proven approach from AddMovies preview)
-  useEffect(() => {
-    if (!movie?._published) return;
-    const mt = movie.type === "Series" ? "tv" : "movie";
-    const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
-    if (!tmdbKey) return;
-
-    let active = true;
-    fetch(`https://api.themoviedb.org/3/${mt}/${movie.id}?api_key=${tmdbKey}&append_to_response=images&include_image_language=en,null`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!active) return;
-        const shots = (data.images?.backdrops || [])
-          .filter((b) => b.file_path)
-          .slice(0, 8)
-          .map((b) => `https://image.tmdb.org/t/p/w780${b.file_path}`);
-        setTmdbScreenshots(shots);
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [movie?._published, movie?.type, movie?.id]);
 
   const tmdbIdentifier = movie?._published
     ? { tmdbId: movie.id, mediaType: movie.type === "Series" ? "tv" : "movie" }
@@ -79,7 +65,7 @@ const MovieDetails = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  if (publishedLoading) {
+  if (loading) {
     return (
       <>
         <Navbar />
@@ -149,11 +135,9 @@ const MovieDetails = () => {
     seasonRange: siteData.seasonRange,
     episodesPerSeason: t.episodesPerSeason || [],
     downloads: siteData.downloads,
-    screenshots: (tmdbScreenshots.length > 0)
-      ? tmdbScreenshots
-      : (t.screenshots && t.screenshots.length > 0)
-        ? t.screenshots
-        : siteData.screenshots,
+    screenshots: (t.screenshots && t.screenshots.length > 0)
+      ? t.screenshots
+      : siteData.screenshots,
     categories: siteData.categories,
     blurb: siteData.blurb,
     description: [siteData.blurb, plot, siteData.description[2]],
