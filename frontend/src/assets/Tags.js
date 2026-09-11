@@ -1,41 +1,75 @@
+// ─── Language & genre normalisation ───────────────────────────────────────────
+// TMDB stores codes ("en", "hi") and full genre names ("Science Fiction"),
+// while navbar/tag links use display names ("English", "Sci-Fi"). Everything
+// funnels through these helpers so tags, nav dropdowns and the home page agree.
+
+const LANG_CODES = {
+  english: "en", hindi: "hi", spanish: "es", tamil: "ta", telugu: "te",
+  kannada: "kn", malayalam: "ml", korean: "ko", japanese: "ja",
+  french: "fr", german: "de", chinese: "zh", mandarin: "zh", italian: "it",
+};
+
+const LANG_NAMES = {
+  en: "English", hi: "Hindi", es: "Spanish", ta: "Tamil", te: "Telugu",
+  kn: "Kannada", ml: "Malayalam", ko: "Korean", ja: "Japanese",
+  fr: "French", de: "German", zh: "Chinese", it: "Italian",
+};
+
+const SOUTH_INDIAN = ["ta", "te", "kn", "ml"];
+
+export const langCode = (v) => {
+  const s = String(v || "").trim().toLowerCase();
+  return LANG_CODES[s] || s;
+};
+
+export const langName = (v) => LANG_NAMES[langCode(v)] || String(v || "");
+
+// Movies grouped as "Dual Audio / Multi Audio" on the site: anything that
+// isn't native English or Hindi.
+const isMultiAudio = (m) => !["en", "hi"].includes(m.lang);
+
+export const matchesLang = (m, value) => {
+  const code = langCode(value);
+  if (code === "multi" || code === "dual audio" || code === "dubbed" || code === "multi audio") {
+    return isMultiAudio(m);
+  }
+  if (code === "south" || code === "south indian") return SOUTH_INDIAN.includes(m.lang);
+  return m.lang === code;
+};
+
+const genreAlias = (v) => {
+  const s = String(v || "").trim().toLowerCase();
+  if (s === "sci-fi" || s === "scifi") return "science fiction";
+  return s;
+};
+
+export const matchesGenre = (m, value) =>
+  String(m.genre || "").toLowerCase() === genreAlias(value);
+
+// ─── Sidebar / chip tags ─────────────────────────────────────────────────────
+
 const tagRules = [
-  {
-    name: "English",
-    test: (m) => m.lang === "English",
-  },
-  {
-    name: "Hindi",
-    test: (m) => m.lang === "Hindi",
-  },
-  {
-    name: "Multi Audio",
-    test: (m) => m.lang === "Dubbed" || m.lang === "Multi Audio",
-  },
-  {
-    name: "Spanish",
-    test: () => false,
-    extraIds: [1, 8, 45, 118, 162],
-  },
-  {
-    name: "Netflix",
-    test: () => false,
-    extraIds: [7, 8, 22, 68, 179],
-  },
+  { name: "English", test: (m) => m.lang === "en" },
+  { name: "Hindi", test: (m) => m.lang === "hi" },
+  { name: "Multi Audio", test: isMultiAudio },
+  { name: "Spanish", test: (m) => m.lang === "es" },
   {
     name: "2026",
-    test: (m) => {
-      const year = m.uploadedAt ? new Date(m.uploadedAt).getFullYear() : null;
-      return year === 2026;
-    },
+    test: (m) => (m.uploadedAt ? new Date(m.uploadedAt).getFullYear() === 2026 : false),
   },
   {
     name: "Drama Series",
-    test: (m) => m.type === "Series" && m.genre === "Drama",
+    test: (m) => m.type === "Series" && matchesGenre(m, "Drama"),
   },
   {
     name: "Spanish Series",
-    test: (m) => m.lang === "Spanish" && m.type === "Series",
-    extraIds: [7, 8, 20, 23, 24],
+    test: (m) => m.lang === "es" && m.type === "Series",
+  },
+  // No OTT/platform field exists in the data, so "Netflix" is approximated as
+  // top-rated series until real platform info is stored on the documents.
+  {
+    name: "Netflix",
+    test: (m) => m.type === "Series" && (m.rating || 0) >= 8,
   },
 ];
 
@@ -46,10 +80,23 @@ export const getMoviesForTag = (name, movies = []) => {
     (t) => t.name.toLowerCase() === String(name).toLowerCase()
   );
   if (!rule) return [];
+  return movies.filter(rule.test);
+};
 
-  const matched = movies.filter(rule.test).map((m) => m.id);
-  const extras = (rule.extraIds || []).filter((id) => !matched.includes(id));
-  const ids = [...new Set([...matched, ...extras])];
+// ─── OTT dropdown buckets ────────────────────────────────────────────────────
+// Heuristic groupings over the fields we have (type / lang / genre / rating) —
+// same caveat as the Netflix tag above.
 
-  return movies.filter((m) => ids.includes(m.id));
+const OTT_BUCKETS = {
+  netflix: (m) => m.type === "Series" && (m.rating || 0) >= 8,
+  "amazon prime": (m) => m.type === "Series" && (m.rating || 0) >= 7 && (m.rating || 0) < 8,
+  "disney+ hotstar": (m) => matchesGenre(m, "Animation"),
+  sonyliv: (m) => m.lang === "hi" && m.type === "Series",
+  zee5: (m) => m.lang === "hi" && m.type === "Movie",
+  "mx player": (m) => isMultiAudio(m) && m.type === "Series",
+};
+
+export const getMoviesForOtt = (name, movies = []) => {
+  const bucket = OTT_BUCKETS[String(name || "").trim().toLowerCase()];
+  return bucket ? movies.filter(bucket) : [];
 };

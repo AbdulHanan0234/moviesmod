@@ -11,22 +11,22 @@ const navItems = [
   {
     label: "MOVIES",
     dropdown: [
-      { label: "Bollywood Movies", link: "/?lang=Hindi&type=movie" },
-      { label: "Hollywood Movies", link: "/?lang=English&type=movie" },
-      { label: "Dual Audio Movies", link: "/?lang=Dual+Audio&type=movie" },
-      { label: "South Indian Movies", link: "/?lang=South+Indian&type=movie" },
+      { label: "Bollywood Movies", link: "/?lang=hi&type=movie" },
+      { label: "Hollywood Movies", link: "/?lang=en&type=movie" },
+      { label: "Dual Audio Movies", link: "/?lang=multi&type=movie" },
+      { label: "South Indian Movies", link: "/?lang=south&type=movie" },
       { label: "Animated Movies", link: "/?genre=Animation&type=movie" },
     ]
   },
   {
     label: "LANGUAGE",
     dropdown: [
-      { label: "Hindi", link: "/?lang=Hindi" },
-      { label: "English", link: "/?lang=English" },
-      { label: "Tamil", link: "/?lang=Tamil" },
-      { label: "Telugu", link: "/?lang=Telugu" },
-      { label: "Kannada", link: "/?lang=Kannada" },
-      { label: "Malayalam", link: "/?lang=Malayalam" },
+      { label: "Hindi", link: "/?lang=hi" },
+      { label: "English", link: "/?lang=en" },
+      { label: "Tamil", link: "/?lang=ta" },
+      { label: "Telugu", link: "/?lang=te" },
+      { label: "Kannada", link: "/?lang=kn" },
+      { label: "Malayalam", link: "/?lang=ml" },
     ]
   },
   {
@@ -67,17 +67,17 @@ const navItems = [
   {
     label: "WEB SERIES",
     dropdown: [
-      { label: "Hindi Web Series", link: "/?lang=Hindi&type=tv" },
-      { label: "English Web Series", link: "/?lang=English&type=tv" },
-      { label: "South Indian Series", link: "/?lang=South+Indian&type=tv" },
+      { label: "Hindi Web Series", link: "/?lang=hi&type=tv" },
+      { label: "English Web Series", link: "/?lang=en&type=tv" },
+      { label: "South Indian Series", link: "/?lang=south&type=tv" },
     ]
   },
   {
     label: "TV SERIES",
     dropdown: [
-      { label: "Hindi TV Shows", link: "/?lang=Hindi&type=tv" },
-      { label: "English TV Shows", link: "/?lang=English&type=tv" },
-      { label: "Korean Drama", link: "/?lang=Korean&type=tv" },
+      { label: "Hindi TV Shows", link: "/?lang=hi&type=tv" },
+      { label: "English TV Shows", link: "/?lang=en&type=tv" },
+      { label: "Korean Drama", link: "/?lang=ko&type=tv" },
     ]
   },
   {

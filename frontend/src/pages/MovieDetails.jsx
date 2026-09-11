@@ -61,6 +61,36 @@ const MovieDetails = () => {
     movie?._published ? null : siteData?.seasonRange,
   );
 
+  // Screenshot rescue: when the TMDB hook comes back empty (missing key in the
+  // environment, transient failure), fetch the backdrops directly so the page
+  // shows real stills instead of the placeholder images.
+  const [shots, setShots] = useState({ id: null, list: null });
+
+  useEffect(() => {
+    if (loading || tmdbLoading || tmdb) return; // hook working or still pending
+    if (!movie || !movie._published) return;    // nothing to rescue with
+    if (shots.id === movie.id) return;          // already attempted for this movie
+    const tmdbKey = import.meta.env.VITE_TMDB_API_KEY;
+    if (!tmdbKey) return;                       // can't rescue without a key
+    let active = true;
+    const mt = movie.type === "Series" ? "tv" : "movie";
+    fetch(`https://api.themoviedb.org/3/${mt}/${movie.id}?api_key=${tmdbKey}&append_to_response=images&include_image_language=en,null`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!active) return;
+        const list = (data.images?.backdrops || [])
+          .filter((b) => b.file_path)
+          .slice(0, 8)
+          .map((b) => `https://image.tmdb.org/t/p/w780${b.file_path}`);
+        setShots({ id: movie.id, list });
+      })
+      .catch(() => {
+        if (!active) return;
+        setShots({ id: movie.id, list: [] });
+      });
+    return () => { active = false; };
+  }, [loading, tmdbLoading, tmdb, movie, shots.id]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
@@ -113,6 +143,23 @@ const MovieDetails = () => {
   const language = t.language || "";
   const released = t.released || movie.released || "";
 
+  // Screenshots: TMDB hook → direct rescue fetch → stored list → placeholders.
+  // While TMDB is still pending, hide the section rather than flash the
+  // placeholder images.
+  const hookShots = t.screenshots || [];
+  let screenshots;
+  if (hookShots.length > 0) {
+    screenshots = hookShots;
+  } else if (!movie._published) {
+    screenshots = siteData.screenshots;
+  } else if (shots.id !== movie.id) {
+    screenshots = []; // rescue fetch still pending
+  } else if (shots.list && shots.list.length > 0) {
+    screenshots = shots.list;
+  } else {
+    screenshots = siteData.screenshots;
+  }
+
   // Merge: TMDB metadata + site-specific data
   const displayDetail = {
     imdbID: siteData.imdbID || t.imdbID || "",
@@ -135,9 +182,7 @@ const MovieDetails = () => {
     seasonRange: siteData.seasonRange,
     episodesPerSeason: t.episodesPerSeason || [],
     downloads: siteData.downloads,
-    screenshots: (t.screenshots && t.screenshots.length > 0)
-      ? t.screenshots
-      : siteData.screenshots,
+    screenshots,
     categories: siteData.categories,
     blurb: siteData.blurb,
     description: [siteData.blurb, plot, siteData.description[2]],
